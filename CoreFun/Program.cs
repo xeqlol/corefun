@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using CoreFun.Data;
 
 namespace CoreFun
 {
@@ -14,12 +11,25 @@ namespace CoreFun
     {
         public static void Main(string[] args)
         {
-            BuildWebHost(args).Run();
-        }
+            IWebHost host = WebHost.CreateDefaultBuilder(args).UseStartup<Startup>().Build();
 
-        public static IWebHost BuildWebHost(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .Build();
+            using (var scope = host.Services.CreateScope())
+            {
+                var servives = scope.ServiceProvider;
+
+                try
+                {
+                    var context = servives.GetRequiredService<SchoolContext>();
+                    DBInitializer.Initialize(context);
+                }
+                catch (Exception e)
+                {
+                    var logger = servives.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(e, "An error occureed while seeding the database. OMG WE ALL GONNA DIE, AAAAAAAAAAAAAAAAAAAAAAAAAAAA...");
+                }
+            }
+
+            host.Run(); // let's go bois
+        }
     }
 }
