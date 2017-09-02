@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using CoreFun.Models;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CoreFun.Data
 {
@@ -19,7 +18,6 @@ namespace CoreFun.Data
             modelBuilder.Entity<Course>().ToTable("Course");
             modelBuilder.Entity<Student>().ToTable("Student");
             modelBuilder.Entity<Enrollment>().ToTable("Enrollment");
-
         }
     }
 }

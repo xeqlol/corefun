@@ -18,16 +18,16 @@ namespace CoreFun
             {
                 var servives = scope.ServiceProvider;
 
-                //try
+                try
                 {
                     var context = servives.GetRequiredService<SchoolContext>();
                     DBInitializer.Initialize(context);
                 }
-                /*catch (Exception e)
+                catch (Exception e)
                 {
                     var logger = servives.GetRequiredService<ILogger<Program>>();
                     logger.LogError(e, "An error occureed while seeding the database. OMG WE ALL GONNA DIE, AAAAAAAAAAAAAAAAAAAAAAAAAAAA...");
-                }*/
+                }
             }
 
             host.Run(); // let's go bois

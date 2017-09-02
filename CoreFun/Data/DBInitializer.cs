@@ -10,8 +10,8 @@ namespace CoreFun.Data
         {
             context.Database.EnsureCreated();
 
-            //if (context.Students.Any())
-            { }//    return;
+            if (context.Students.AnyAsync().Result) //when it becomes async wtf?
+                return;
 
             var students = new Student[]
             {
@@ -42,6 +42,7 @@ namespace CoreFun.Data
                 new Course{CourseID=2021,Title="Composition",Credits=3},
                 new Course{CourseID=2042,Title="Literature",Credits=4}
             };
+
             // solution for 'IDENTITY_INSERT is set to OFF' problem
             using (var trans = context.Database.BeginTransaction())
             {
