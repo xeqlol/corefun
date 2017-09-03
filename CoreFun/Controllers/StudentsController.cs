@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using CoreFun.Data;
 using CoreFun.Models;
+using System.Linq;
 
 namespace CoreFun.Controllers
 {
@@ -15,9 +16,56 @@ namespace CoreFun.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder, string currentFilter, string searchString, int? page)
         {
-            return View(await _context.Students.ToListAsync());
+            ViewData["CurrentSort"] = sortOrder;
+            ViewData["NameSortParam"] = string.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+            ViewData["LastNameSortParam"] = sortOrder == "lastname_asc" || string.IsNullOrEmpty(sortOrder) ? "lastname_desc" : "lastname_asc";
+            ViewData["DateSortParam"] = sortOrder == "date_asc" || string.IsNullOrEmpty(sortOrder) ? "date_desc" : "date_asc";
+
+            if (searchString != null)
+            {
+                page = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+
+            ViewData["CurrentFilter"] = searchString;
+
+            var students = from s in _context.Students select s;
+
+            // Ofc, we can improve search methods, but im too lazy lul.
+            if(!string.IsNullOrEmpty(searchString))
+            {
+                students = students.Where(s => s.LastName.Contains(searchString) || s.FirstMidName.Contains(searchString));
+            }
+
+            switch (sortOrder) {
+                case "name_desc":
+                    students = students.OrderByDescending(s => s.LastName);
+                    break;
+                case "date_asc":
+                    students = students.OrderBy(s => s.EnrollmentDate);
+                    break;
+                case "date_desc":
+                    students = students.OrderByDescending(s => s.EnrollmentDate);
+                    break;
+                case "lastname_asc":
+                    students = students.OrderBy(s => s.FirstMidName);
+                    break;
+                case "lastname_desc":
+                    students = students.OrderByDescending(s => s.FirstMidName);
+                    break;
+                default:
+                    students = students.OrderBy(s => s.LastName);
+                    break;
+            }
+
+            int pageSize = 3; // default number of students per page
+            int pageNumber = (page ?? 1);
+            return View(await PaginatedList<Student>.CreateAsync(students.AsNoTracking(), pageNumber, pageSize));
         }
 
         public async Task<IActionResult> Details(int? id)

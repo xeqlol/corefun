@@ -5,21 +5,37 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using CoreFun.Models;
+using CoreFun.Data;
+using CoreFun.Models.SchoolViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace CoreFun.Controllers
 {
     public class HomeController : Controller
     {
+        public readonly SchoolContext _context;
+
+        public HomeController(SchoolContext context)
+        {
+            _context = context;
+        }
+
         public IActionResult Index()
         {
             return View();
         }
 
-        public IActionResult About()
+        public async Task<IActionResult> About()
         {
-            ViewData["Message"] = "Your application description page.";
+            IQueryable<EnrollmentDateGroup> data = from student in _context.Students
+                                                   group student by student.EnrollmentDate into dateGroup
+                                                   select new EnrollmentDateGroup
+                                                   {
+                                                       EnrollmentDate = dateGroup.Key,
+                                                       StudentCount = dateGroup.Count()
+                                                   };
 
-            return View();
+            return View(await data.AsNoTracking().ToListAsync());
         }
 
         public IActionResult Contact()
