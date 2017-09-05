@@ -8,6 +8,7 @@ using CoreFun.Models;
 using CoreFun.Data;
 using CoreFun.Models.SchoolViewModels;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
 
 namespace CoreFun.Controllers
 {
@@ -27,15 +28,36 @@ namespace CoreFun.Controllers
 
         public async Task<IActionResult> About()
         {
-            IQueryable<EnrollmentDateGroup> data = from student in _context.Students
-                                                   group student by student.EnrollmentDate into dateGroup
-                                                   select new EnrollmentDateGroup
-                                                   {
-                                                       EnrollmentDate = dateGroup.Key,
-                                                       StudentCount = dateGroup.Count()
-                                                   };
+            List<EnrollmentDateGroup> groups = new List<EnrollmentDateGroup>();
+            var conn = _context.Database.GetDbConnection();
 
-            return View(await data.AsNoTracking().ToListAsync());
+            try
+            {
+                await conn.OpenAsync();
+                using (var command = conn.CreateCommand())
+                {
+                    string query = "SELECT EnrollmentDate, COUNT(*) AS StudentCount "
+                        + "FROM Person "
+                        + "WHERE Discriminator = 'Student' "
+                        + "GROUP BY EnrollmentDate";
+                    command.CommandText = query;
+                    DbDataReader reader = await command.ExecuteReaderAsync();
+
+                    if (reader.HasRows)
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var row = new EnrollmentDateGroup { EnrollmentDate = reader.GetDateTime(0), StudentCount = reader.GetInt32(1) };
+                            groups.Add(row);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return View(groups);
         }
 
         public IActionResult Contact()
